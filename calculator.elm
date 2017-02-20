@@ -9,8 +9,12 @@ main =
 
 -- MODEL
 
+type Component = NumberLiteral Int | Multiply | Plus | Minus | Divide
+
+type Display = Expression (List Component) | Error
+
 type alias Model =
-  {
+  {  screen : Display
   }
 
 
@@ -83,4 +87,5 @@ subscriptions model =
 -- INIT
 
 init : (Model, Cmd Msg)
-init = (Model, Cmd.none)
+init = (Model (Expression []), Cmd.none)
+
