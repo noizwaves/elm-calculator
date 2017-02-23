@@ -43,10 +43,7 @@ update msg model =
               Nothing -> (Expression [NumberLiteral n], Cmd.none)
               Just component ->
                 case component of
-                  Operation Multiply -> (Expression (components ++ [NumberLiteral n]), Cmd.none)
-                  Operation Plus -> (Expression (components ++ [NumberLiteral n]), Cmd.none)
-                  Operation Minus -> (Expression (components ++ [NumberLiteral n]), Cmd.none)
-                  Operation Divide -> (Expression (components ++ [NumberLiteral n]), Cmd.none)
+                  Operation _ -> (Expression (components ++ [NumberLiteral n]), Cmd.none)
                   NumberLiteral last -> (Expression ((dropLast components) ++ [NumberLiteral (last * 10 + n)]), Cmd.none)
         PressEqual -> (evaluate components, Cmd.none)
 
@@ -62,10 +59,12 @@ dropLast list =
 evaluate : List Component -> Display
 evaluate components =
   case components of
-    (NumberLiteral op1) :: (Operation Multiply) :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 * op2)]
-    (NumberLiteral op1) :: (Operation Plus) :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 + op2)]
-    (NumberLiteral op1) :: (Operation Minus) :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 - op2)]
-    (NumberLiteral op1) :: (Operation Divide) :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 // op2)]
+    (NumberLiteral op1) :: (Operation operator) :: (NumberLiteral op2) :: [] ->
+      case operator of
+        Multiply -> Expression [NumberLiteral (op1 * op2)]
+        Plus -> Expression [NumberLiteral (op1 + op2)]
+        Minus -> Expression [NumberLiteral (op1 - op2)]
+        Divide -> Expression [NumberLiteral (op1 // op2)]
     _ -> Error
 
 
