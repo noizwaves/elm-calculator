@@ -9,7 +9,9 @@ main =
 
 -- MODEL
 
-type Component = NumberLiteral Int | Multiply | Plus | Minus | Divide
+type Operator = Multiply | Plus | Minus | Divide
+
+type Component = NumberLiteral Int | Operation Operator
 
 type Display = Expression (List Component) | Error
 
@@ -18,7 +20,7 @@ type alias Model = Display
 
 -- UPDATE
 
-type Msg = PressDigit Int | PressMultiply | PressPlus | PressMinus | PressDivide | PressEqual | PressClear
+type Msg = PressDigit Int | PressOperator Operator | PressEqual | PressClear
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -26,19 +28,13 @@ update msg model =
     Error ->
       case msg of
         PressClear -> (Expression [NumberLiteral 0], Cmd.none)
-        PressMultiply -> (model, Cmd.none)
-        PressPlus -> (model, Cmd.none)
-        PressMinus -> (model, Cmd.none)
-        PressDivide -> (model, Cmd.none)
+        PressOperator _ -> (model, Cmd.none)
         PressDigit n -> (model, Cmd.none)
         PressEqual -> (model, Cmd.none)
     Expression components ->
       case msg of
         PressClear -> (Expression [NumberLiteral 0], Cmd.none)
-        PressMultiply -> (Expression (components ++ [Multiply]), Cmd.none)
-        PressPlus -> (Expression (components ++ [Plus]), Cmd.none)
-        PressMinus -> (Expression (components ++ [Minus]), Cmd.none)
-        PressDivide -> (Expression (components ++ [Divide]), Cmd.none)
+        PressOperator operator -> (Expression (components ++ [Operation operator]), Cmd.none)
         PressDigit n ->
           let
             lastComponent = List.head (List.reverse components)
@@ -47,10 +43,10 @@ update msg model =
               Nothing -> (Expression [NumberLiteral n], Cmd.none)
               Just component ->
                 case component of
-                  Multiply -> (Expression (components ++ [NumberLiteral n]), Cmd.none)
-                  Plus -> (Expression (components ++ [NumberLiteral n]), Cmd.none)
-                  Minus -> (Expression (components ++ [NumberLiteral n]), Cmd.none)
-                  Divide -> (Expression (components ++ [NumberLiteral n]), Cmd.none)
+                  Operation Multiply -> (Expression (components ++ [NumberLiteral n]), Cmd.none)
+                  Operation Plus -> (Expression (components ++ [NumberLiteral n]), Cmd.none)
+                  Operation Minus -> (Expression (components ++ [NumberLiteral n]), Cmd.none)
+                  Operation Divide -> (Expression (components ++ [NumberLiteral n]), Cmd.none)
                   NumberLiteral last -> (Expression ((dropLast components) ++ [NumberLiteral (last * 10 + n)]), Cmd.none)
         PressEqual -> (evaluate components, Cmd.none)
 
@@ -66,10 +62,10 @@ dropLast list =
 evaluate : List Component -> Display
 evaluate components =
   case components of
-    (NumberLiteral op1) :: Multiply :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 * op2)]
-    (NumberLiteral op1) :: Plus :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 + op2)]
-    (NumberLiteral op1) :: Minus :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 - op2)]
-    (NumberLiteral op1) :: Divide :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 // op2)]
+    (NumberLiteral op1) :: (Operation Multiply) :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 * op2)]
+    (NumberLiteral op1) :: (Operation Plus) :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 + op2)]
+    (NumberLiteral op1) :: (Operation Minus) :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 - op2)]
+    (NumberLiteral op1) :: (Operation Divide) :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 // op2)]
     _ -> Error
 
 
@@ -86,16 +82,16 @@ view model =
       , div [ id "buttons-container"]
         [ div [ class "buttons" ]
           [ span [ class "operator", id "clear", onClick PressClear ] [ text "C" ]
-          , span [ class "operator", onClick PressDivide ] [ text "÷" ]
-          , span [ class "operator", onClick PressMultiply ] [ text "x" ]
+          , span [ class "operator", onClick (PressOperator Divide) ] [ text "÷" ]
+          , span [ class "operator", onClick (PressOperator Multiply) ] [ text "x" ]
           , span [ onClick (PressDigit 7) ] [ text "7" ]
           , span [ onClick (PressDigit 8) ] [ text "8" ]
           , span [ onClick (PressDigit 9) ] [ text "9" ]
-          , span [ class "operator", onClick PressMinus ] [ text "-" ]
+          , span [ class "operator", onClick (PressOperator Minus) ] [ text "-" ]
           , span [ onClick (PressDigit 4) ] [ text "4" ]
           , span [ onClick (PressDigit 5) ] [ text "5" ]
           , span [ onClick (PressDigit 6) ] [ text "6" ]
-          , span [ class "operator", onClick PressPlus ] [ text "+" ]
+          , span [ class "operator", onClick (PressOperator Plus) ] [ text "+" ]
           , span [ onClick (PressDigit 1) ] [ text "1" ]
           , span [ onClick (PressDigit 2) ] [ text "2" ]
           , span [ onClick (PressDigit 3) ] [ text "3" ]
@@ -121,10 +117,10 @@ viewComponent : Component -> String
 viewComponent component =
   case component of
      NumberLiteral num -> toString num
-     Multiply -> "x"
-     Plus -> "+"
-     Minus -> "-"
-     Divide -> "÷"
+     Operation Multiply -> "x"
+     Operation Plus -> "+"
+     Operation Minus -> "-"
+     Operation Divide -> "÷"
 
 
 stylesheet : String -> Html Msg
