@@ -64,7 +64,13 @@ dropLast list =
       Just tt -> List.reverse tt
 
 evaluate : List Component -> Display
-evaluate components = Error
+evaluate components =
+  case components of
+    (NumberLiteral op1) :: Multiply :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 * op2)]
+    (NumberLiteral op1) :: Plus :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 + op2)]
+    (NumberLiteral op1) :: Minus :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 - op2)]
+    (NumberLiteral op1) :: Divide :: (NumberLiteral op2) :: [] ->  Expression [NumberLiteral (op1 // op2)]
+    _ -> Error
 
 
 -- VIEW
